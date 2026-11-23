@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Грамматическая битва — Тайны глагола</title>
+<style>
+:root{--bg:#10152b;--panel:#1b2342;--panel2:#252f56;--text:#f5f7ff;--muted:#b8c2e3;--accent:#8b7cff;--good:#42d6a4;--bad:#ff7185}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:radial-gradient(circle at top,#293568,#10152b 60%);color:var(--text);min-height:100vh;padding:20px}
+main{max-width:900px;margin:auto}.hero{text-align:center;padding:28px 12px}.hero .emoji{font-size:48px}.hero h1{font-size:clamp(28px,5vw,44px);margin:12px 0}.hero p{color:var(--muted);line-height:1.5}
+.card{background:rgba(27,35,66,.96);border:1px solid #394574;border-radius:20px;padding:22px;margin:16px 0;box-shadow:0 14px 35px #080d2080}
+input{width:100%;padding:14px;border-radius:12px;border:1px solid #596797;background:#101832;color:white;font-size:16px;margin:8px 0 14px}
+button{border:0;border-radius:12px;padding:13px 17px;font-weight:bold;font-size:15px;cursor:pointer;background:var(--accent);color:white;margin:5px}
+button:hover{filter:brightness(1.12)}button.secondary{background:#35436f}button:disabled{opacity:.5;cursor:not-allowed}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.mode{background:var(--panel2);border:1px solid #465487;border-radius:14px;padding:16px;cursor:pointer}.mode:hover{outline:2px solid var(--accent)}.mode b{display:block;margin-bottom:6px}.muted{color:var(--muted)}.hidden{display:none}
+.topline{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-weight:bold}.bar{height:9px;background:#0f1730;border-radius:9px;overflow:hidden;margin:14px 0}.bar span{display:block;height:100%;background:linear-gradient(90deg,#8b7cff,#42d6a4);width:0}
+.answers{display:grid;gap:10px;margin-top:18px}.answers button{text-align:left;background:#303d6a;padding:16px}.answers button.correct{background:#167b62}.answers button.wrong{background:#96394f}
+#feedback{padding:14px;border-radius:12px;margin-top:14px;background:#121a34;line-height:1.5}.question{font-size:clamp(20px,3vw,27px);line-height:1.4;margin:20px 0}
+footer{text-align:center;color:var(--muted);padding:20px;font-size:13px}
+</style>
+</head>
+<body>
+<main>
+<section class="hero">
+<div class="emoji">⚔️📚</div>
+<h1>Грамматическая битва</h1>
+<h2>Тайны глагола</h2>
+<p>Интерактивная игра по русскому языку<br>Проверь знания, набери баллы и стань мастером глагола!</p>
+</section>
+<section id="start" class="card">
+<h3>👤 Представься, участник!</h3>
+<label for="player">Имя и фамилия</label>
+<input id="player" maxlength="40" placeholder="Например, Анна Иванова">
+<h3>🎯 Выбери режим игры</h3>
+<div class="modes" id="modes"></div>
+<p class="muted">В каждом раунде  вопросы с вариантами ответов. За правильный ответ начисляются баллы.</p>
+</section>
+<section id="game" class="card hidden">
+<div class="topline"><span id="round">Раунд 1</span><span id="score">Баллы: 0</span><span id="timer">⏱ 20</span></div>
+<div class="bar"><span id="progress"></span></div>
+<div class="question" id="question"></div>
+<div class="answers" id="answers"></div>
+<div id="feedback" class="hidden"></div>
+<button id="next" class="hidden">Следующий вопрос →</button>
+</section>
+<section id="result" class="card hidden">
+<h2>🏆 Раунд завершён!</h2>
+<p id="resultText"></p>
+<h3>Таблица результатов на этом устройстве</h3>
+<ol id="leaders"></ol>
+<button onclick="location.reload()">Сыграть ещё раз</button>
+</section>
+<footer>Учись, играй и открывай тайны русского глагола!</footer>
+</main>
+<script>
+const bank=[
+{q:"Что обозначает глагол?",a:["Предмет","Действие или состояние предмета","Признак предмета","Количество"],c:1,e:"Глагол обозначает действие или состояние предмета и отвечает на вопросы что делать? что сделать?"},
+{q:"На какие вопросы отвечает глагол в неопределённой форме?",a:["Кто? что?","Какой? какая?","Что делать? что сделать?","Где? куда?"],c:2,e:"Начальная форма глагола отвечает на вопросы что делать? что сделать?"},
+{q:"Укажите глагол совершенного вида.",a:["Читать","Решать","Писать","Прочитать"],c:3,e:"Совершенный вид обозначает завершённое действие: прочитать."},
+{q:"Укажите глагол несовершенного вида.",a:["Построить","Рисовать","Закончить","Увидеть"],c:1,e:"Несовершенный вид обозначает процесс или повторяемость действия: рисовать."},
+{q:"Какой глагол относится к I спряжению?",a:["Смотреть","Дышать","Читать","Слышать"],c:2,e:"Читать относится к I спряжению."},
+{q:"Какой глагол относится ко II спряжению?",a:["Бороться","Стелить","Гнать","Играть"],c:2,e:"Гнать — исключение, относящееся ко II спряжению."},
+{q:"Выберите форму 3-го лица множественного числа глагола «строить».",a:["строют","строят","строют","строите"],c:1,e:"Строить — II спряжение: они строят."},
+{q:"В каком времени стоит глагол «прочитали»?",a:["Настоящее","Будущее","Прошедшее","Повелительное наклонение"],c:2,e:"Форма прочитали обозначает действие, которое произошло в прошлом."},
+{q:"Укажите глагол в повелительном наклонении.",a:["Пишешь","Напишите","Написал","Буду писать"],c:1,e:"Напишите выражает побуждение к действию, просьбу или приказ."},
+{q:"Как изменяются глаголы настоящего времени?",a:["По падежам","По лицам и числам","По родам и падежам","Только по родам"],c:1,e:"Глаголы настоящего времени изменяются по лицам и числам."},
+{q:"В каком варианте НЕ с глаголом пишется раздельно?",a:["(Не)навидеть","(Не)доумевать","(Не)знал","(Не)годовать"],c:2,e:"С большинством глаголов НЕ пишется раздельно: не знал."},
+{q:"Выберите возвратный глагол.",a:["Умываться","Умывать","Умыть","Умою"],c:0,e:"Возвратные глаголы имеют постфикс -ся или -сь."},
+{q:"Какой глагол является переходным?",a:["Спать","Идти","Читать книгу","Смеяться"],c:2,e:"Переходный глагол может иметь прямое дополнение без предлога: читать (что?) книгу."},
+{q:"Определите спряжение глагола «говорить».",a:["I","II","Не имеет спряжения","Оба варианта"],c:1,e:"Говорить — глагол II спряжения."},
+{q:"Выберите правильное написание.",a:["Бережёшь","Бережош","Бережёш","Бережошь"],c:0,e:"Во 2-м лице единственного числа после шипящей под ударением пишется Ё: бережёшь."},
+{q:"Какова синтаксическая роль глагола в предложении чаще всего?",a:["Определение","Подлежащее","Сказуемое","Дополнение"],c:2,e:"В предложении личная форма глагола чаще всего выступает сказуемым."},
+{q:"Найдите составное глагольное сказуемое.",a:["Студент читает","Он начал готовиться","День тёплый","Книга интересная"],c:1,e:"Начал готовиться: вспомогательный глагол + инфинитив образуют составное глагольное сказуемое."}
+];
+const modes=[["⚡ Быстрый старт","5 вопросов за короткое время",5],["🧠 Знаток глагола","8 вопросов для уверенных",8],["🔥 Грамматический марафон","Все 17 вопросов",17],["🎲 Случайный вызов","5 случайных вопросов",5],["🎓 Экзаменационный раунд","10 вопросов",10],["🏅 Финальная битва","Все вопросы без подсказок",17]];
+let questions=[],idx=0,score=0,seconds=20,clock=null,player="";
+const $=id=>document.getElementById(id);
+modes.forEach((m,i)=>{let d=document.createElement("div");d.className="mode";d.innerHTML=`<b>${m[0]}</b><span class="muted">${m[1]}</span>`;d.onclick=()=>start(i);$("modes").appendChild(d)});
+function start(mode){player=$("player").value.trim()||"Участник";let count=modes[mode][2];questions=[...bank].sort(()=>Math.random()-.5).slice(0,count);idx=0;score=0;$("start").classList.add("hidden");$("game").classList.remove("hidden");show()}
+function show(){clearInterval(clock);seconds=20;$("feedback").classList.add("hidden");$("next").classList.add("hidden");$("round").textContent=`Вопрос ${idx+1} из ${questions.length}`;$("score").textContent=`Баллы: ${score}`;$("timer").textContent=`⏱ ${seconds}`;$("progress").style.width=(idx/questions.length*100)+"%";let q=questions[idx];$("question").textContent=q.q;$("answers").innerHTML="";q.a.forEach((a,i)=>{let b=document.createElement("button");b.textContent=String.fromCharCode(1040+i)+") "+a;b.onclick=()=>answer(i);$("answers").appendChild(b)});clock=setInterval(()=>{seconds--;$("timer").textContent=`⏱ ${seconds}`;if(seconds<=0)answer(-1)},1000)}
+function answer(choice){if($("next").classList.contains("hidden")===false)return;clearInterval(clock);let q=questions[idx],buttons=[...$("answers").children];buttons.forEach((b,i)=>{b.disabled=true;if(i===q.c)b.classList.add("correct");else if(i===choice)b.classList.add("wrong")});if(choice===q.c)score+=10;$("score").textContent=`Баллы: ${score}`;$("feedback").classList.remove("hidden");$("feedback").innerHTML=(choice===q.c?"<b>Верно! +10 баллов 🎉</b>":"<b>Попробуй в следующий раз!</b>")+"<br>"+q.e;$("next").classList.remove("hidden");$("next").textContent=idx===questions.length-1?"Посмотреть результат":"Следующий вопрос →"}
+$("next").onclick=()=>{idx++;if(idx<questions.length)show();else finish()};
+function finish(){ $("game").classList.add("hidden");$("result").classList.remove("hidden");$("resultText").textContent=`${player}, твой результат: ${score} из ${questions.length*10} баллов (${Math.round(score/(questions.length*10)*100)}%).`;let list=JSON.parse(localStorage.getItem("glagolLeaders")||"[]");list.push({name:player,score,date:new Date().toLocaleDateString("ru-RU")});list.sort((a,b)=>b.score-a.score);list=list.slice(0,10);localStorage.setItem("glagolLeaders",JSON.stringify(list));$("leaders").innerHTML=list.map(x=>`<li>${escapeHtml(x.name)} — ${x.score} баллов <span class="muted">(${x.date})</span></li>`).join("");$("progress").style.width="100%"}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+</script>
+</body>
+</html>
